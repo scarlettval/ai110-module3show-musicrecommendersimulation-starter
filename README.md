@@ -35,7 +35,20 @@ Real-world platforms like Spotify and TikTok combine two approaches. **Collabora
 - `target_energy`: preferred energy level from 0 to 1, e.g. `0.40`
 - `likes_acoustic`: `True` / `False`
 
-**Scoring rule (one song, max 5.0 points)**
+**Example taste profile** (in `src/main.py`), a late-night study listener:
+
+```python
+user_prefs = {
+    "favorite_genre": "lofi",
+    "favorite_mood": "chill",
+    "target_energy": 0.40,
+    "likes_acoustic": True,
+}
+```
+
+When I tested this profile against the 20-song catalog, it clearly tells "chill lofi" from "intense rock." *Library Rain* (lofi/chill) scores 4.85, while *Storm Runner* (rock/intense) scores 0.79. A matching rock profile (`rock`, `intense`, `0.90`, `False`) gives the reverse result, with *Storm Runner* at 4.93.
+
+**Algorithm recipe (scoring rule for one song, max 5.0 points)**
 
 | Part | Points |
 |---|---|
@@ -45,6 +58,29 @@ Real-world platforms like Spotify and TikTok combine two approaches. **Collabora
 | Acoustic fit | 0.5 × acousticness if `likes_acoustic`, else 0.5 × (1 − acousticness) |
 
 **Ranking rule (whole catalog)**: score every song, sort from highest to lowest score, break ties consistently, and return the top *k*.
+
+**Data flow**
+
+```mermaid
+flowchart LR
+    A["Input: user_prefs<br/>genre, mood, target_energy, likes_acoustic"] --> C
+    B["data/songs.csv<br/>20 songs"] -->|load_songs| C
+    subgraph Process["Process: the loop"]
+        C["For each song"] --> D["score_song<br/>genre + mood + energy + acoustic"]
+        D --> E["(song, score, explanation)"]
+    end
+    E --> F["Sort by score, highest first"]
+    F --> G["Output: top K recommendations"]
+```
+
+**Expected biases and limitations**
+
+- **Genre dominates.** A genre match (+2.0) outweighs a perfect mood and energy match combined. Great songs from a neighboring genre can get buried: a pop fan gets no genre credit for an "indie pop" song.
+- **Exact string matching is brittle.** "chill" and "relaxed," or "pop" and "indie pop," count as complete mismatches.
+- **Small genre groups.** Most genres have only one song. After that song, a rock fan's list is decided almost entirely by energy, and positions 3–5 are near-ties (1.89–1.91).
+- **Mood is ignored unless it matches exactly.** *Rainy Window* (blues/sad) ranks 6th for the chill lofi listener simply because its energy and acousticness are close.
+- **One fixed taste.** The profile holds one genre and one mood, so it can't represent someone who likes both lofi and jazz, or whose mood changes over the day.
+- **No discovery.** As a purely content-based system, it keeps recommending more of the same and never surprises the user the way collaborative filtering can.
 
 ---
 
