@@ -2,6 +2,12 @@ import csv
 from typing import List, Dict, Tuple, Optional
 from dataclasses import dataclass
 
+# Scoring weights from the Algorithm Recipe in README.md (max total = 5.0).
+GENRE_WEIGHT = 2.0
+MOOD_WEIGHT = 1.0
+ENERGY_WEIGHT = 1.5
+ACOUSTIC_WEIGHT = 0.5
+
 @dataclass
 class Song:
     """
@@ -79,10 +85,52 @@ def score_song(user_prefs: Dict, song: Dict) -> Tuple[float, List[str]]:
     """
     Scores a single song against user preferences.
     Required by recommend_songs() and src/main.py
+
+    Algorithm recipe (max 5.0 points):
+      - Genre match:      +2.0
+      - Mood match:       +1.0
+      - Energy closeness: 1.5 * (1 - |song energy - target energy|)
+      - Acoustic fit:     0.5 * acousticness       if the user likes acoustic
+                          0.5 * (1 - acousticness) otherwise
+
+    Returns (score, reasons), where reasons lists every part that added points.
     """
-    # TODO: Implement scoring logic using your Algorithm Recipe from Phase 2.
-    # Expected return format: (score, reasons)
-    return []
+    score = 0.0
+    reasons: List[str] = []
+
+    # Categorical features: all-or-nothing exact match (case-insensitive).
+    if song["genre"].strip().lower() == user_prefs["favorite_genre"].strip().lower():
+        score += GENRE_WEIGHT
+        reasons.append(f"genre match: {song['genre']} (+{GENRE_WEIGHT:.1f})")
+
+    if song["mood"].strip().lower() == user_prefs["favorite_mood"].strip().lower():
+        score += MOOD_WEIGHT
+        reasons.append(f"mood match: {song['mood']} (+{MOOD_WEIGHT:.1f})")
+
+    # Numeric feature: reward closeness to the target, not a higher or lower value.
+    # Energy is on a 0-1 scale, so the distance is also 0-1 and similarity = 1 - distance.
+    target_energy = user_prefs["target_energy"]
+    energy_similarity = 1.0 - abs(song["energy"] - target_energy)
+    energy_points = ENERGY_WEIGHT * energy_similarity
+    score += energy_points
+    reasons.append(
+        f"energy {song['energy']:.2f} vs target {target_energy:.2f} (+{energy_points:.2f})"
+    )
+
+    # Acoustic preference is yes/no, so it rewards one direction of the scale.
+    if user_prefs.get("likes_acoustic", False):
+        acoustic_fit = song["acousticness"]
+        label = "acoustic sound"
+    else:
+        acoustic_fit = 1.0 - song["acousticness"]
+        label = "non-acoustic sound"
+    acoustic_points = ACOUSTIC_WEIGHT * acoustic_fit
+    score += acoustic_points
+    reasons.append(
+        f"{label}, acousticness {song['acousticness']:.2f} (+{acoustic_points:.2f})"
+    )
+
+    return score, reasons
 
 def recommend_songs(user_prefs: Dict, songs: List[Dict], k: int = 5) -> List[Tuple[Dict, float, str]]:
     """
