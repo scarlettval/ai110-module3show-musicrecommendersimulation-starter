@@ -1,61 +1,49 @@
 # 🎧 Model Card: Music Recommender Simulation
 
-## 1. Model Name  
+## 1. Model Name
 
-Give your model a short, descriptive name.  
-Example: **VibeFinder 1.0**  
-
----
-
-## 2. Intended Use  
-
-Describe what your recommender is designed to do and who it is for. 
-
-Prompts:  
-
-- What kind of recommendations does it generate  
-- What assumptions does it make about the user  
-- Is this for real users or classroom exploration  
+**VibeMatch 1.0**
 
 ---
 
-## 3. How the Model Works  
+## 2. Intended Use
 
-Explain your scoring approach in simple language.  
+**Goal:** Suggest the top 5 songs from a small catalog that best fit one listener's taste. The listener gives a favorite genre, a favorite mood, a target energy (0-1), and whether they like acoustic sound.
 
-Prompts:  
+**Intended use:** A classroom project for learning how a simple, rule-based recommender works and where it goes wrong.
 
-- What features of each song are used (genre, energy, mood, etc.)  
-- What user preferences are considered  
-- How does the model turn those into a score  
-- What changes did you make from the starter logic  
-
-Avoid code here. Pretend you are explaining the idea to a friend who does not program.
+**Not intended for:** Real users or a real music app. The catalog is tiny, the songs are made up, and it knows nothing about lyrics, listening history, or how tastes change over time. It should not be used to judge what music is "good" or to make decisions about artists.
 
 ---
 
-## 4. Data  
+## 3. How the Model Works
 
-Describe the dataset the model uses.  
+Every song gets points for how well it matches the listener, out of 5:
 
-Prompts:  
+- **Same genre:** +2 points.
+- **Same mood:** +1 point.
+- **Close energy:** up to +1.5 points. The closer the song's energy is to the target, the more points.
+- **Acoustic fit:** up to +0.5 points. Acoustic songs earn more if the listener likes acoustic; non-acoustic songs earn more if they don't.
 
-- How many songs are in the catalog  
-- What genres or moods are represented  
-- Did you add or remove data  
-- Are there parts of musical taste missing in the dataset  
+The songs are sorted by score, and the top 5 are shown with a short "why" list. Genre and mood must match exactly, but capital letters and extra spaces are ignored. Ties go to the song with the lower ID, so the results are always the same.
 
 ---
 
-## 5. Strengths  
+## 4. Data
 
-Where does your system seem to work well  
+- **20 songs** in `data/songs.csv`. The starter file had 10; I added 10 more to cover more genres and moods.
+- **17 genres and 16 moods**, but most have only one song. Lofi has 3 songs; pop has 2.
+- **Features:** title, artist, genre, mood, energy, tempo, valence, danceability, acousticness. The model only uses genre, mood, energy, and acousticness.
+- **Limits:** Few middle-energy songs (only 3 between 0.45 and 0.70). Loud songs are almost never acoustic. No lyrics, languages, release years, or popularity.
 
-Prompts:  
+---
 
-- User types for which it gives reasonable results  
-- Any patterns you think your scoring captures correctly  
-- Cases where the recommendations matched your intuition  
+## 5. Strengths
+
+- Works well when the listener's genre has several songs. Chill Lofi got 3 strong lofi picks.
+- Clear, opposite tastes get clearly different lists. High-Energy Pop and Chill Lofi share no songs.
+- Every result explains itself, so it is easy to see why a song was picked.
+- It handles messy input like "  Indie POP " correctly.
 
 ---
 
@@ -92,25 +80,20 @@ I checked whether the #1 song fit the profile, whether the rest of the list made
 
 ---
 
-## 8. Future Work  
+## 8. Future Work
 
-Ideas for how you would improve the model next.  
-
-Prompts:  
-
-- Additional features or preferences  
-- Better ways to explain recommendations  
-- Improving diversity among the top results  
-- Handling more complex user tastes  
+- **Give partial credit for related genres**, so "pop", "indie pop", and "k-pop" are treated as close instead of totally different.
+- **Add more songs, especially middle-energy and loud-acoustic ones**, so lists are not filled by the same few loud songs.
+- **Check the input**: keep energy between 0 and 1, and warn when a genre or mood is not in the catalog.
 
 ---
 
-## 9. Personal Reflection  
+## 9. Personal Reflection
 
-A few sentences about your experience.  
+**Biggest learning moment:** Turning off the mood check. I expected the results to just shift, but every change made the lists worse. That showed me that even a 1-point feature can hold the rankings together.
 
-Prompts:  
+**Using AI tools:** AI helped me write the profiles, run the experiments, and draft this card quickly. I still had to double-check its claims against the actual output. For example, it first said "Gym Hero" kept showing up for Happy Pop, but in my results it only appeared once, at #2, so I replaced that example with one I could see in the data.
 
-- What you learned about recommender systems  
-- Something unexpected or interesting you discovered  
-- How this changed the way you think about music recommendation apps  
+**What surprised me:** Four simple rules and some addition already "feel" like a real recommender. The "why" lines make the picks seem thoughtful, even when a song is only there because it is loud.
+
+**What I'd try next:** Use more features, like tempo and valence, and add some variety to the top 5 so one artist or energy level doesn't take over the list.
