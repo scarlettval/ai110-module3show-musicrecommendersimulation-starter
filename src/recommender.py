@@ -8,6 +8,9 @@ MOOD_WEIGHT = 1.0
 ENERGY_WEIGHT = 1.5
 ACOUSTIC_WEIGHT = 0.5
 
+# Best possible score: the sum of the weights used in score_song.
+MAX_SCORE = GENRE_WEIGHT + MOOD_WEIGHT + ENERGY_WEIGHT + ACOUSTIC_WEIGHT
+
 @dataclass
 class Song:
     """
